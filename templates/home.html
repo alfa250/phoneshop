@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Home
+{% endblock %}
+
+{% block content %}
+
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">
+                Shop at your convenience
+            </h1>
+
+            <p class="lead fw-normal text-white-50">
+                Find your favourite phones at great prices.
+            </p>
+        </div>
+    </div>
+</header>
+
+<section class="py-5">
+
+    <div class="container px-4 px-lg-5">
+
+        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+
+        {% for product in products %}
+
+        <div class="col mb-5">
+
+            <div class="card h-100 shadow-sm">
+
+                {% if product.image %}
+                    <img
+                        class="card-img-top"
+                        src="{{ product.image.url }}"
+                        alt="{{ product.name }}"
+                        style="height:250px; object-fit:cover;"
+                    >
+                {% else %}
+                    <img
+                        class="card-img-top"
+                        src="{% static 'assets/no-image.png' %}"
+                        alt="No image available"
+                        style="height:250px; object-fit:cover;"
+                    >
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+
+                    <div class="text-center">
+
+                        <h5 class="fw-bold">
+                            {{ product.name }}
+                        </h5>
+
+                        <p class="text-muted small">
+                            {{ product.description|truncatewords:12 }}
+                        </p>
+
+                        {% if product.is_sale %}
+
+                            <h6>
+                                <span class="text-decoration-line-through text-muted">
+                                    ${{ product.price }}
+                                </span>
+                            </h6>
+
+                            <h5 class="text-danger fw-bold">
+                                ${{ product.sale_price }}
+                            </h5>
+
+                        {% else %}
+
+                            <h5 class="fw-bold">
+                                ${{ product.price }}
+                            </h5>
+
+                        {% endif %}
+
+                    </div>
+
+                    <div class="mt-auto">
+
+                        <div class="d-grid gap-2">
+
+                            <a href="{% url 'product_detail' product.id %}"
+                            class="btn btn-outline-secondary">
+                                View Details
+                            </a>
+
+                            <form action="{% url 'add_to_cart' product.id %}" method="POST">
+
+                                {% csrf_token %}
+
+                                <button type="submit" class="btn btn-dark">
+
+                                    <i class="bi bi-cart-plus"></i>
+                                    Add to Cart
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="col-12 text-center">
+
+            <h3>No products available.</h3>
+
+        </div>
+
+        {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
