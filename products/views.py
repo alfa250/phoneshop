@@ -1,7 +1,9 @@
 
+from django.db import transaction
 from django.views.generic import ListView, DetailView
-from .models import Product, Order, OrderItem
+from .models import Product, Order, OrderItem, Category
 from django.contrib.auth.views import LoginView, LogoutView
+from django.views.generic.edit import CreateView, FormView
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
@@ -12,6 +14,10 @@ from django.views.generic import RedirectView
 from django.views.generic import DetailView
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import CheckoutForm
+from django.views.generic import TemplateView
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -34,9 +40,9 @@ class LoginUserView(LoginView):
 class LogoutUserView(LogoutView):
     next_page = 'login'
 
-    def dispatch(self, request, *args, **kwargs):
-        messages.success(request, 'You have successfully logged out.')
-        return super().dispatch(request, *args, **kwargs)
+    def dispatch(self, *args, **kwargs):
+        messages.success(self.request, 'You have successfully logged out.')
+        return super().dispatch(self.request, *args, **kwargs)
     
 class RegisterUserView(CreateView):
     form_class = RegisterForm
@@ -116,3 +122,196 @@ class CartView(TemplateView):
         context["total"] = total
 
         return context
+
+
+class CategoryListView(ListView):
+    model = Category
+    template_name = 'categories.html'
+    context_object_name = 'categories'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        print(context["categories"])
+        return context
+
+
+class CategoryProductsView(ListView):
+    model = Product
+    template_name = "category_products.html"
+    context_object_name = "products"
+
+    def get_queryset(self):
+        self.category = Category.objects.get(pk=self.kwargs["pk"])
+        return Product.objects.filter(category=self.category)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["category"] = self.category
+        return context
+
+
+
+class CheckoutView(LoginRequiredMixin, FormView):
+
+
+    template_name = 'checkout.html'
+    form_class = CheckoutForm
+    success_url = reverse_lazy('order_success')
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        cart = self.request.session.get('cart', {})
+
+        cart_items = []
+        total = 0
+
+        for product_id, quantity in cart.items():
+
+            try:
+                product = Product.objects.get(id=product_id)
+            except Product.DoesNotExist:
+                continue
+
+            subtotal = product.current_price * quantity
+
+            cart_items.append({
+                'product': product,
+                'quantity': quantity,
+                'subtotal': subtotal,
+            })
+
+            total += subtotal
+
+        context['cart_items'] = cart_items
+        context['total'] = total
+
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+
+        cart = self.request.session.get('cart', {})
+
+        if not cart:
+            form.add_error(None, 'Your cart is empty.')
+            return self.form_invalid(form)
+
+        total = 0
+        order_items = []
+
+        # 1. Validate products and stock
+        for product_id, quantity in cart.items():
+
+            try:
+                product = Product.objects.get(id=product_id)
+            except Product.DoesNotExist:
+                form.add_error(
+                    None,
+                    f'Product {product.name} does not exist.'
+                )
+                return self.form_invalid(form)
+
+            # 2. Check stock
+            if product.stock < quantity:
+                form.add_error(
+                    None,
+                    f'Not enough stock for {product.name}. '
+                    f'Available: {product.stock}, requested: {quantity}.'
+                )
+                return self.form_invalid(form)
+
+            # 3. Capture the current price
+            price = product.current_price
+
+            # 4. Calculate subtotal
+            subtotal = price * quantity
+
+            # 5. Add to total
+            total += subtotal
+
+            # 6. Store information temporarily
+            order_items.append({
+                'product': product,
+                'quantity': quantity,
+                'price': price,
+            })
+
+        # 7. Create the Order
+        order = Order.objects.create(
+            user=self.request.user,
+            full_name=form.cleaned_data['full_name'],
+            phone=form.cleaned_data['phone'],
+            address=form.cleaned_data['address'],
+            city=form.cleaned_data['city'],
+            state=form.cleaned_data['state'],
+            total=total,
+        )
+
+        # 8. Create OrderItems and reduce stock
+        for item in order_items:
+
+            OrderItem.objects.create(
+                order=order,
+                product=item['product'],
+                quantity=item['quantity'],
+                price=item['price'],
+            )
+
+            product = item['product']
+            product.stock -= item['quantity']
+            product.save(update_fields=['stock'])
+
+        # 9. Clear the cart
+        self.request.session['cart'] = {}
+
+        # 10. Store order ID in session
+        self.request.session['order_id'] = str(order.order_id)
+
+        self.request.session.modified = True
+
+        return super().form_valid(form)
+
+
+class OrderSuccessView(LoginRequiredMixin, TemplateView):
+
+    template_name = 'order_success.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        order_id = self.request.session.get('order_id')
+
+        if order_id:
+            order = get_object_or_404(
+                Order,
+                order_id=order_id,
+                user=self.request.user
+            )
+
+            context['order'] = order
+
+        return context
+
+
+class MyOrdersView(LoginRequiredMixin, ListView):
+
+    model = Order
+    template_name = 'my_orders.html'
+    context_object_name = 'orders'
+
+    def get_queryset(self):
+        return Order.objects.filter(
+            user=self.request.user
+            ).order_by('-date_created')
+
+        
+class OrderDetailView(LoginRequiredMixin, DetailView):
+    model = Order
+    template_name = 'order_detail.html'
+    context_object_name = 'order'
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)

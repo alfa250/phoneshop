@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Categories
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <h2 class="mb-4 text-center">
+        Product Categories
+    </h2>
+
+    {% for category in categories %}
+
+        <div class="card mb-4 shadow-sm">
+
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">{{ category.name }}</h4>
+            </div>
+
+            <div class="card-body">
+
+                <p>{{ category.description }}</p>
+
+                {% if category.products.all %}
+
+                    <div class="row">
+
+                        {% for product in category.products.all %}
+
+                        <div class="col-md-3 mb-3">
+
+                            <div class="card h-100">
+
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}"
+                                         class="card-img-top"
+                                         style="height:180px; object-fit:cover;">
+                                {% endif %}
+
+                                <div class="card-body">
+
+                                    <h6>{{ product.name }}</h6>
+
+                                    <p class="text-primary">
+                                        ${{ product.current_price }}
+                                    </p>
+
+                                    <a href="{% url 'product_detail' product.pk %}"
+                                       class="btn btn-outline-primary btn-sm">
+                                        View Details
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {% empty %}
+
+                        <p>No products in this category.</p>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <h4 class="text-center">
+            No categories found.
+        </h4>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

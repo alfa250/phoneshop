@@ -6,6 +6,18 @@ from django.contrib.auth.models import User, AbstractUser
 
 # Create your models here.
 
+class Category(models.Model):
+    name = models.CharField(max_length = 100, unique = True)
+    description = models.TextField()
+    
+    class Meta:
+        verbose_name_plural = 'Categories'
+        
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     name =  models.CharField(max_length = 100)
     description = models.TextField()
@@ -14,7 +26,13 @@ class Product(models.Model):
     stock = models.PositiveIntegerField()
     is_sale = models.BooleanField(default = False)
     sale_price = models.DecimalField(max_digits = 10, decimal_places = 2, null = True, blank = True)
-
+    category = models.ForeignKey(
+    Category,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name="products"
+)
     @property
     def current_price(self):
         if self.is_sale and self.sale_price:
@@ -25,23 +43,60 @@ class Product(models.Model):
 class Order(models.Model):
 
     class StatusChoices(models.TextChoices):
-        PENDING =  'Pending'
-        CONFIRMED =  'Confirmed'
+        PENDING = 'Pending'
+        CONFIRMED = 'Confirmed'
         CANCELED = 'Canceled'
-    order_id = models.UUIDField(primary_key = True, default = uuid.uuid4)
-    user = models.ForeignKey(User, on_delete = models.CASCADE)
-    date_created = models.DateTimeField(auto_now_add = True)
-    status = models.CharField(
-        choices = StatusChoices.choices,
-        default = StatusChoices.PENDING
+
+    order_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
     )
-    product = models.ManyToManyField(Product, through = 'OrderItem', related_name = 'orders')
+    order_number = models.PositiveIntegerField(
+    unique=True,
+    editable=False
+)
 
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
 
-    def __str__(self):
-        return f'Order {self.order_id} by {self.user.username} is {self.status}'
+    full_name = models.CharField(max_length=100, blank = True)
+    phone = models.CharField(max_length=20, blank = True)
+    address = models.TextField(blank = True)
+    city = models.CharField(max_length=100, blank = True)
+    state = models.CharField(max_length=100, blank = True)
 
-#this is going to create a join table linking the product table to the order table.
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING
+    )
+
+    product = models.ManyToManyField(
+        Product,
+        through='OrderItem',
+        related_name='orders'
+    )
+    total = models.DecimalField(
+    max_digits=10,
+    decimal_places=2,
+    default=0.00
+    )
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            last_order = Order.objects.order_by('-order_number').first()
+
+            if last_order:
+                self.order_number = last_order.order_number + 1
+            else:
+                self.order_number = 1001
+
+        super().save(*args, **kwargs)
+
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
@@ -49,6 +104,19 @@ class OrderItem(models.Model):
         related_name = 'items')
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
     quantity = models.PositiveIntegerField()
+    price = models.DecimalField(
+    max_digits=10,
+    decimal_places=2,
+    default=0.00
+    )
+    @property
+    def subtotal(self):
+        return self.quantity * self.price
 
+        
+
+
+
+    
 
     

@@ -70,7 +70,14 @@ Shopping Cart
         <h4>Your cart is empty.</h4>
 
     {% endif %}
+    <div class="text-center mt-4">
 
+        <a href="{% url 'checkout' %}" class="btn btn-dark">
+            Proceed to Checkout
+        </a>
+
+    </div>
+    <br>
 </div>
 
 {% endblock %}
