@@ -17,7 +17,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import CheckoutForm
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
-
+from django.shortcuts import redirect
 
 
 
@@ -26,6 +26,17 @@ class ProductListView(ListView):
     template_name = 'home.html'
     context_object_name = 'products'
 
+    def get_queryset(self):
+        queryset = Product.objects.all()
+
+        search = self.request.GET.get('search', '').strip()
+
+        if search:
+            queryset = queryset.filter(
+                name__icontains=search
+            )
+        return queryset
+        
 class LoginUserView(LoginView):
     template_name = 'login.html'
 
@@ -104,19 +115,21 @@ class CartView(TemplateView):
 
             try:
                 product = Product.objects.get(pk=product_id)
-
-                subtotal = product.price * quantity
-
-                total += subtotal
-
-                cart_items.append({
-                    "product": product,
-                    "quantity": quantity,
-                    "subtotal": subtotal,
-                })
-
             except Product.DoesNotExist:
                 continue
+            price = product.current_price
+            subtotal = price * quantity
+
+            total += subtotal
+
+            cart_items.append({
+                "product": product,
+                "quantity": quantity,
+                "price": price,
+                "subtotal": subtotal,
+            })
+
+            
 
         context["cart_items"] = cart_items
         context["total"] = total
@@ -315,3 +328,52 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
+
+
+
+class RemoveFromCartView(View):
+    def post(self, request, product_id):
+        cart = request.session.get("cart", {})
+        product_id = str(product_id)
+        if product_id in cart:
+            del cart[product_id]
+            request.session["cart"] = cart
+            request.session.modified = True
+            messages.success(request, "Item removed from cart.")
+        return redirect("cart")
+
+
+class UpdateCartView(View):
+
+    def post(self, request, product_id):
+
+        cart = request.session.get("cart", {})
+
+        product_id = str(product_id)
+
+        if product_id not in cart:
+            return redirect("cart")
+
+        product = get_object_or_404(Product, pk=product_id)
+
+        quantity = int(request.POST.get("quantity", 1))
+
+        # Prevent invalid quantities
+        if quantity < 1:
+            del cart[product_id]
+
+        # Don't allow the customer to exceed available stock
+        elif quantity > product.stock:
+            messages.warning(
+                request,
+                f"Only {product.stock} units of {product.name} are available."
+            )
+            cart[product_id] = product.stock
+
+        else:
+            cart[product_id] = quantity
+
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        return redirect("cart")

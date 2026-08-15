@@ -24,6 +24,7 @@ Shopping Cart
                     <th>Price</th>
                     <th>Quantity</th>
                     <th>Subtotal</th>
+                    <th>Action</th>
                 </tr>
 
             </thead>
@@ -45,11 +46,90 @@ Shopping Cart
 
                     <td>{{ item.product.name }}</td>
 
-                    <td>${{ item.product.price }}</td>
+                    <td>₦{{ item.price|floatformat:2 }}</td>
+                    <td>
 
-                    <td>{{ item.quantity }}</td>
+                        <div class="d-flex align-items-center gap-2">
 
-                    <td>${{ item.subtotal }}</td>
+                            <!-- Decrease -->
+                            <form
+                                method="post"
+                                action="{% url 'update_cart' item.product.pk %}"
+                            >
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="quantity"
+                                    value="{{ item.quantity|add:'-1' }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    {% if item.quantity <= 1 %}disabled{% endif %}
+                                >
+                                    −
+                                </button>
+
+                            </form>
+
+
+                            <!-- Current quantity -->
+                            <span class="fw-bold px-2">
+                                {{ item.quantity }}
+                            </span>
+
+
+                            <!-- Increase -->
+                            <form
+                                method="post"
+                                action="{% url 'update_cart' item.product.pk %}"
+                            >
+                                {% csrf_token %}
+
+                                <input
+                                    type="hidden"
+                                    name="quantity"
+                                    value="{{ item.quantity|add:'1' }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    {% if item.quantity >= item.product.stock %}disabled{% endif %}
+                                >
+                                    +
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                    
+                    <td>₦{{ item.subtotal|floatformat:2 }}</td>
+                    <td>
+
+                        <form
+                            method="post"
+                            action="{% url 'remove_from_cart' item.product.pk %}"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="btn btn-outline-danger btn-sm"
+                            >
+                                <i class="bi bi-trash"></i>
+                                Remove
+                            </button>
+
+                        </form>
+
+                    </td>
 
                 </tr>
 

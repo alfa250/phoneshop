@@ -18,5 +18,7 @@ urlpatterns = [
     path('order-success/', views.OrderSuccessView.as_view(), name='order_success'),
     path('my-orders/', views.MyOrdersView.as_view(), name='my_orders'),
     path('order/<uuid:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
+    path('cart/remove/<int:product_id>/', views.RemoveFromCartView.as_view(), name='remove_from_cart'),
+    path('cart/update/<int:product_id>/', views.UpdateCartView.as_view(), name='update_cart'),
 ]
 

@@ -19,6 +19,33 @@ Home
         </div>
     </div>
 </header>
+<div class="container px-4 px-lg-5 mt-5">
+
+    <form method="get">
+
+        <div class="input-group">
+
+            <input
+                type="search"
+                name="search"
+                class="form-control"
+                placeholder="Search for a phone..."
+                value="{{ request.GET.search|default:'' }}"
+            >
+
+            <button
+                type="submit"
+                class="btn btn-dark"
+            >
+                <i class="bi bi-search"></i>
+                Search
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
 
 <section class="py-5">
 
@@ -111,9 +138,26 @@ Home
 
         {% empty %}
 
-        <div class="col-12 text-center">
+        <div class="col-12 text-center py-5">
 
-            <h3>No products available.</h3>
+            {% if request.GET.search %}
+
+                <h3>No products found.</h3>
+
+                <p class="text-muted">
+                    No products matched
+                    "<strong>{{ request.GET.search }}</strong>".
+                </p>
+
+                <a href="{% url 'home' %}" class="btn btn-outline-dark">
+                    View All Products
+                </a>
+
+            {% else %}
+
+                <h3>No products available.</h3>
+
+            {% endif %}
 
         </div>
 
