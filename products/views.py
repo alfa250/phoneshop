@@ -1,4 +1,3 @@
-
 from django.db import transaction
 from django.views.generic import ListView, DetailView
 from .models import Product, Order, OrderItem, Category
@@ -36,6 +35,13 @@ class ProductListView(ListView):
                 name__icontains=search
             )
         return queryset
+
+class ProductDetailView(LoginRequiredMixin, DetailView):
+    model = Product
+    template_name = "product_detail.html"
+    context_object_name = "product"
+    login_url = 'login'
+
         
 class LoginUserView(LoginView):
     template_name = 'login.html'
@@ -69,36 +75,35 @@ class RegisterUserView(CreateView):
         return super().form_invalid(form)
 
 
-class AddToCartView(View):
-
-    pattern_name = "home"
-
-    def post(self, request, *args, **kwargs):
-
-        product = get_object_or_404(Product, pk=kwargs["product_id"])
-
-        cart = request.session.get("cart", {})
-
-        product_id = str(product.id)
-
-        cart[product_id] = cart.get(product_id, 0) + 1
-
-        request.session["cart"] = cart
-        request.session.modified = True
-
-        messages.success(
-            request,
-            f"{product.name} added to cart."
-        )
-
-        return redirect('home')
-
-class ProductDetailView(LoginRequiredMixin, DetailView):
-    model = Product
-    template_name = "product_detail.html"
-    context_object_name = "product"
-    login_url = 'login'
     
+
+
+
+class CategoryListView(ListView):
+    model = Category
+    template_name = 'categories.html'
+    context_object_name = 'categories'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        print(context["categories"])
+        return context
+
+
+class CategoryProductsView(ListView):
+    model = Product
+    template_name = "category_products.html"
+    context_object_name = "products"
+
+    def get_queryset(self):
+        self.category = Category.objects.get(pk=self.kwargs["pk"])
+        return Product.objects.filter(category=self.category)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["category"] = self.category
+        return context
+
 
 class CartView(TemplateView):
     template_name = "cart.html"
@@ -136,31 +141,85 @@ class CartView(TemplateView):
 
         return context
 
+class AddToCartView(View):
 
-class CategoryListView(ListView):
-    model = Category
-    template_name = 'categories.html'
-    context_object_name = 'categories'
+    pattern_name = "home"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        print(context["categories"])
-        return context
+    def post(self, request, *args, **kwargs):
+
+        product = get_object_or_404(Product, pk=kwargs["product_id"])
+
+        cart = request.session.get("cart", {})
+
+        product_id = str(product.id)
+
+        cart[product_id] = cart.get(product_id, 0) + 1
+
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        messages.success(
+            request,
+            f"{product.name} added to cart."
+        )
+
+        return redirect('home')
 
 
-class CategoryProductsView(ListView):
-    model = Product
-    template_name = "category_products.html"
-    context_object_name = "products"
 
-    def get_queryset(self):
-        self.category = Category.objects.get(pk=self.kwargs["pk"])
-        return Product.objects.filter(category=self.category)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["category"] = self.category
-        return context
+class RemoveFromCartView(View):
+    def post(self, request, product_id):
+        cart = request.session.get("cart", {})
+        product_id = str(product_id)
+        if product_id in cart:
+            del cart[product_id]
+            request.session["cart"] = cart
+            request.session.modified = True
+            messages.success(request, "Item removed from cart.")
+        return redirect("cart")
+
+
+class UpdateCartView(View):
+
+    def post(self, request, product_id):
+
+        cart = request.session.get("cart", {})
+
+        product_id = str(product_id)
+
+        if product_id not in cart:
+            return redirect("cart")
+
+        product = get_object_or_404(Product, pk=product_id)
+        try:
+            quantity = int(request.POST.get("quantity", 1))
+        except (TypeError, ValueError):
+            messages.warning(
+                request,
+                "Please enter a valid quantity."
+            )
+            return redirect("cart")
+
+        # Prevent invalid quantities
+        if quantity < 1:
+            del cart[product_id]
+
+        # Don't allow the customer to exceed available stock
+        elif quantity > product.stock:
+            messages.warning(
+                request,
+                f"Only {product.stock} units of {product.name} are available."
+            )
+            cart[product_id] = product.stock
+
+        else:
+            cart[product_id] = quantity
+
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        return redirect("cart")
 
 
 
@@ -222,7 +281,7 @@ class CheckoutView(LoginRequiredMixin, FormView):
             except Product.DoesNotExist:
                 form.add_error(
                     None,
-                    f'Product {product.name} does not exist.'
+                    f'Product {product_id} does not exist.'
                 )
                 return self.form_invalid(form)
 
@@ -330,50 +389,3 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         return Order.objects.filter(user=self.request.user)
 
 
-
-class RemoveFromCartView(View):
-    def post(self, request, product_id):
-        cart = request.session.get("cart", {})
-        product_id = str(product_id)
-        if product_id in cart:
-            del cart[product_id]
-            request.session["cart"] = cart
-            request.session.modified = True
-            messages.success(request, "Item removed from cart.")
-        return redirect("cart")
-
-
-class UpdateCartView(View):
-
-    def post(self, request, product_id):
-
-        cart = request.session.get("cart", {})
-
-        product_id = str(product_id)
-
-        if product_id not in cart:
-            return redirect("cart")
-
-        product = get_object_or_404(Product, pk=product_id)
-
-        quantity = int(request.POST.get("quantity", 1))
-
-        # Prevent invalid quantities
-        if quantity < 1:
-            del cart[product_id]
-
-        # Don't allow the customer to exceed available stock
-        elif quantity > product.stock:
-            messages.warning(
-                request,
-                f"Only {product.stock} units of {product.name} are available."
-            )
-            cart[product_id] = product.stock
-
-        else:
-            cart[product_id] = quantity
-
-        request.session["cart"] = cart
-        request.session.modified = True
-
-        return redirect("cart")
