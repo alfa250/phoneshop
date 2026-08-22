@@ -550,3 +550,22 @@ class ProductAdminTest(TestCase):
 
         self.assertFalse(
             queryset.filter(stock__gt=0).exists())
+    
+    def test_stock_status_filter_has_correct_choices(self):
+        filter_instance = StockStatusFilter(
+            RequestFactory().get('/admin/products/product/'),
+            {},
+            Product,
+            self.admin
+        )
+
+        choices = dict(filter_instance.lookups(None, self.admin))
+
+        self.assertEqual(
+            choices,
+            {
+                'in_stock': 'In Stock',
+                'low_stock': 'Low Stock',
+                'out_of_stock': 'Out of Stock',
+            }
+        )
