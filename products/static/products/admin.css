@@ -1,0 +1,20 @@
+.stock-status {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.stock-status.out-of-stock {
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+.stock-status.low-stock {
+    color: #92400e;
+    background-color: #fef3c7;
+}
+
+.stock-status.in-stock {
+    color: #166534;
+    background-color: #dcfce7;
+}

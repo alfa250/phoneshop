@@ -569,3 +569,42 @@ class ProductAdminTest(TestCase):
                 'out_of_stock': 'Out of Stock',
             }
         )
+
+    def test_out_of_stock_has_correct_css_class(self):
+        self.product.stock = 0
+
+        result = self.admin.stock_status(self.product)
+
+        self.assertIn('out-of-stock', result)
+
+    def test_low_stock_has_correct_css_class(self):
+        self.product.stock = 3
+
+        result = self.admin.stock_status(self.product)
+
+        self.assertIn('low-stock', result)
+
+    def test_in_stock_has_correct_css_class(self):
+        self.product.stock = 10
+
+        result = self.admin.stock_status(self.product)
+
+        self.assertIn('in-stock', result)
+
+    def test_admin_loads_stock_status_css(self):
+        self.assertEqual(
+            self.admin.media._css,
+            {
+                'all': ['products/admin.css']
+            }
+        )
+
+    def test_stock_status_returns_span_element(self):
+        self.product.stock = 0
+
+        result = self.admin.stock_status(self.product)
+
+        self.assertIn('<span', result)
+        self.assertIn('out-of-stock', result)
+        self.assertIn('Out of Stock', result)
+        self.assertIn('</span>', result)

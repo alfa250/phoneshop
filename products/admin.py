@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Product, Category, Order, OrderItem
-
+from django.utils.safestring import mark_safe
 
 class StockStatusFilter(admin.SimpleListFilter):
     title = 'Stock Status'
@@ -52,6 +52,12 @@ class ProductAdmin(admin.ModelAdmin):
         'stock',
         'is_sale'
     )
+    class Media:
+        css = {
+            'all': ('products/admin.css',)
+        }
+
+
 
     def current_price(self, obj):
         return obj.current_price
@@ -62,17 +68,23 @@ class ProductAdmin(admin.ModelAdmin):
     #     return obj.stock <= 5
     # is_low_stock.short_description = 'Low Stock'
 
+    
     def stock_status(self, obj):
         if obj.stock == 0:
-            return 'Out of Stock'
+            return mark_safe(
+                '<span class="stock-status out-of-stock">Out of Stock</span>'
+            )
+
         elif obj.stock <= 5:
-            return 'Low Stock'
-        return 'In Stock'
+            return mark_safe(
+                '<span class="stock-status low-stock">Low Stock</span>'
+            )
+
+        return mark_safe(
+            '<span class="stock-status in-stock">In Stock</span>'
+        )
 
     stock_status.short_description = 'Stock Status'
-
-
-
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
