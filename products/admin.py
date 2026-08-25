@@ -109,11 +109,15 @@ class OrderAdmin(admin.ModelAdmin):
         'date_created',
         'status',
         'total',
+        'item_count',
+        'total_quantity'
     )
 
     list_filter = (
         'status',
         'date_created',
+        'status'
+
     )
 
 
@@ -121,7 +125,7 @@ class OrderAdmin(admin.ModelAdmin):
         'order_number',
         'full_name',
         'phone',
-        'user__username',
+        'address',
     )
 
 
@@ -162,12 +166,29 @@ class OrderAdmin(admin.ModelAdmin):
 
             order.status = Order.StatusChoices.CANCELED
             order.save(update_fields=['status'])
+
+    def item_count(self, obj):
+        return obj.items.count()
+
+    def total_quantity(self, obj):
+        items = obj.items.all()
+        return sum(item.quantity for item in items)
+        
+
+    total_quantity.short_description = 'Total Quantity'
+
+
+
+
+
+    item_count.short_description = 'Items'
     
-    mark_as_canceled.short_description = (
-    "Cancel selected orders and restore stock")
+    mark_as_canceled.short_description = ("Cancel selected orders and restore stock")
         
     actions = ['mark_as_confirmed',
                 'mark_as_canceled']
+
+    
 
     nlines = (OrderItemInline,)
 

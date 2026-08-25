@@ -466,6 +466,8 @@ class OrderAdminTest(TestCase):
             Order.StatusChoices.CANCELED
         )
 
+    
+
 class ProductAdminTest(TestCase):
 
     def setUp(self):
