@@ -1,0 +1,84 @@
+
+GET http://127.0.0.1:8000/api/products/ HTTP/1.1
+
+###
+
+POST http://127.0.0.1:8000/api/products/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg4MjQzNTkzLCJpYXQiOjE3ODgyNDMyOTMsImp0aSI6IjVkYTdmNTUxNmE1MDQzZDdiMzNjZDJhZmZiZGNlOGVkIiwidXNlcl9pZCI6IjMifQ.B6V9OO8HmRxMiWQPPkEJRl7buUHTgnfS6NWZctV1YEw
+
+{
+    "id": 11,
+    "name": "infinix cammon 30",
+    "description": "this phone is very good",
+    "price": "33.30",
+    "sale_price": null,
+    "is_sale": false,
+    "stock": 7,
+    "category": 3,
+    "current_price": 33.3  
+}
+
+###
+
+DELETE  http://127.0.0.1:8000/api/products/12/ HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg4MjYwODU0LCJpYXQiOjE3ODgyNjA1NTQsImp0aSI6Ijg2Y2QxM2NlMjBiNzRiN2E4MDA3MTVmMTEwNmJiNTE4IiwidXNlcl9pZCI6IjMifQ.Hti9y5XhSqW32UFvzmJY0Z7cHwqgVWeaMeEs7sQmY3w
+
+###
+
+PUT http://127.0.0.1:8000/api/products/11/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg4MjYwMjYyLCJpYXQiOjE3ODgyNTk5NjIsImp0aSI6IjU4MGQyZTVmNDJjMjRlNTM5ZTNlNTRlOWRlNjMyMTc4IiwidXNlcl9pZCI6IjMifQ.ROdy_bzFme2Se1WZWBb-zP2FJCmxBwZgpJHnibCi5OA
+
+{
+    "id": 11,
+    "name": "infinix cammon 30",
+    "description": "this phone is very good",
+    "price": "33.30",
+    "sale_price": null,
+    "is_sale": false,
+    "stock": 13,
+    "category": 3,
+    "current_price": 33.3  
+}
+
+
+###
+
+POST http://127.0.0.1:8000/api/token/ HTTP/1.1
+Content-Type: application/json
+
+
+{
+   "username": "aondofa",
+   "password": "alfred1212" 
+}
+
+###
+
+POST http://127.0.0.1:8000/api/token/refresh/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "refresh":
+} 
+
+
+POST http://127.0.0.1:8000/api/orders/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg4MjQzNTkzLCJpYXQiOjE3ODgyNDMyOTMsImp0aSI6IjVkYTdmNTUxNmE1MDQzZDdiMzNjZDJhZmZiZGNlOGVkIiwidXNlcl9pZCI6IjMifQ.B6V9OO8HmRxMiWQPPkEJRl7buUHTgnfS6NWZctV1YEw
+
+{
+    "id": 11,
+    "name": "infinix cammon 30",
+    "description": "this phone is very good",
+    "price": "33.30",
+    "sale_price": null,
+    "is_sale": false,
+    "stock": 7,
+    "category": 3,
+    "current_price": 33.3  
+}
+
+
+
