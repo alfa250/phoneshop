@@ -33,6 +33,10 @@ class ProductSerializer(serializers.ModelSerializer):
     
 
         )
+        read_only_fields = (
+            'id',
+            'current_price'
+        )
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source = 'product.name', read_only = True)
